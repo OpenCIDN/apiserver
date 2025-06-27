@@ -27,6 +27,7 @@ const (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +genclient
+// +genclient:nonNamespaced
 
 // Sync is an API that describes the staged change of a resource
 // +k8s:deepcopy-gen=true

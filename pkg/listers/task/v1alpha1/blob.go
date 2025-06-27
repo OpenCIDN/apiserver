@@ -31,8 +31,9 @@ type BlobLister interface {
 	// List lists all Blobs in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*taskv1alpha1.Blob, err error)
-	// Blobs returns an object that can list and get Blobs.
-	Blobs(namespace string) BlobNamespaceLister
+	// Get retrieves the Blob from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*taskv1alpha1.Blob, error)
 	BlobListerExpansion
 }
 
@@ -44,27 +45,4 @@ type blobLister struct {
 // NewBlobLister returns a new BlobLister.
 func NewBlobLister(indexer cache.Indexer) BlobLister {
 	return &blobLister{listers.New[*taskv1alpha1.Blob](indexer, taskv1alpha1.Resource("blob"))}
-}
-
-// Blobs returns an object that can list and get Blobs.
-func (s *blobLister) Blobs(namespace string) BlobNamespaceLister {
-	return blobNamespaceLister{listers.NewNamespaced[*taskv1alpha1.Blob](s.ResourceIndexer, namespace)}
-}
-
-// BlobNamespaceLister helps list and get Blobs.
-// All objects returned here must be treated as read-only.
-type BlobNamespaceLister interface {
-	// List lists all Blobs in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*taskv1alpha1.Blob, err error)
-	// Get retrieves the Blob from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*taskv1alpha1.Blob, error)
-	BlobNamespaceListerExpansion
-}
-
-// blobNamespaceLister implements the BlobNamespaceLister
-// interface.
-type blobNamespaceLister struct {
-	listers.ResourceIndexer[*taskv1alpha1.Blob]
 }

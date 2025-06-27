@@ -43,10 +43,10 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // Blobs returns a BlobInformer.
 func (v *version) Blobs() BlobInformer {
-	return &blobInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &blobInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Syncs returns a SyncInformer.
 func (v *version) Syncs() SyncInformer {
-	return &syncInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &syncInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

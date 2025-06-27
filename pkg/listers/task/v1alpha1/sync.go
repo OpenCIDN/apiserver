@@ -31,8 +31,9 @@ type SyncLister interface {
 	// List lists all Syncs in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*taskv1alpha1.Sync, err error)
-	// Syncs returns an object that can list and get Syncs.
-	Syncs(namespace string) SyncNamespaceLister
+	// Get retrieves the Sync from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*taskv1alpha1.Sync, error)
 	SyncListerExpansion
 }
 
@@ -44,27 +45,4 @@ type syncLister struct {
 // NewSyncLister returns a new SyncLister.
 func NewSyncLister(indexer cache.Indexer) SyncLister {
 	return &syncLister{listers.New[*taskv1alpha1.Sync](indexer, taskv1alpha1.Resource("sync"))}
-}
-
-// Syncs returns an object that can list and get Syncs.
-func (s *syncLister) Syncs(namespace string) SyncNamespaceLister {
-	return syncNamespaceLister{listers.NewNamespaced[*taskv1alpha1.Sync](s.ResourceIndexer, namespace)}
-}
-
-// SyncNamespaceLister helps list and get Syncs.
-// All objects returned here must be treated as read-only.
-type SyncNamespaceLister interface {
-	// List lists all Syncs in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*taskv1alpha1.Sync, err error)
-	// Get retrieves the Sync from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*taskv1alpha1.Sync, error)
-	SyncNamespaceListerExpansion
-}
-
-// syncNamespaceLister implements the SyncNamespaceLister
-// interface.
-type syncNamespaceLister struct {
-	listers.ResourceIndexer[*taskv1alpha1.Sync]
 }

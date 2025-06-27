@@ -30,11 +30,11 @@ type fakeBlobs struct {
 	Fake *FakeTaskV1alpha1
 }
 
-func newFakeBlobs(fake *FakeTaskV1alpha1, namespace string) taskv1alpha1.BlobInterface {
+func newFakeBlobs(fake *FakeTaskV1alpha1) taskv1alpha1.BlobInterface {
 	return &fakeBlobs{
 		gentype.NewFakeClientWithList[*v1alpha1.Blob, *v1alpha1.BlobList](
 			fake.Fake,
-			namespace,
+			"",
 			v1alpha1.SchemeGroupVersion.WithResource("blobs"),
 			v1alpha1.SchemeGroupVersion.WithKind("Blob"),
 			func() *v1alpha1.Blob { return &v1alpha1.Blob{} },

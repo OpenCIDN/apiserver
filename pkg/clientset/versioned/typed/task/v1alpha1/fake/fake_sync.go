@@ -30,11 +30,11 @@ type fakeSyncs struct {
 	Fake *FakeTaskV1alpha1
 }
 
-func newFakeSyncs(fake *FakeTaskV1alpha1, namespace string) taskv1alpha1.SyncInterface {
+func newFakeSyncs(fake *FakeTaskV1alpha1) taskv1alpha1.SyncInterface {
 	return &fakeSyncs{
 		gentype.NewFakeClientWithList[*v1alpha1.Sync, *v1alpha1.SyncList](
 			fake.Fake,
-			namespace,
+			"",
 			v1alpha1.SchemeGroupVersion.WithResource("syncs"),
 			v1alpha1.SchemeGroupVersion.WithKind("Sync"),
 			func() *v1alpha1.Sync { return &v1alpha1.Sync{} },

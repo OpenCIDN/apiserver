@@ -37,12 +37,12 @@ type TaskV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *TaskV1alpha1Client) Blobs(namespace string) BlobInterface {
-	return newBlobs(c, namespace)
+func (c *TaskV1alpha1Client) Blobs() BlobInterface {
+	return newBlobs(c)
 }
 
-func (c *TaskV1alpha1Client) Syncs(namespace string) SyncInterface {
-	return newSyncs(c, namespace)
+func (c *TaskV1alpha1Client) Syncs() SyncInterface {
+	return newSyncs(c)
 }
 
 // NewForConfig creates a new TaskV1alpha1Client for the given config.

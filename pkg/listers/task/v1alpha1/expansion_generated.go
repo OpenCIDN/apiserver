@@ -22,14 +22,6 @@ package v1alpha1
 // BlobLister.
 type BlobListerExpansion interface{}
 
-// BlobNamespaceListerExpansion allows custom methods to be added to
-// BlobNamespaceLister.
-type BlobNamespaceListerExpansion interface{}
-
 // SyncListerExpansion allows custom methods to be added to
 // SyncLister.
 type SyncListerExpansion interface{}
-
-// SyncNamespaceListerExpansion allows custom methods to be added to
-// SyncNamespaceLister.
-type SyncNamespaceListerExpansion interface{}

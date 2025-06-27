@@ -27,6 +27,7 @@ const (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +genclient
+// +genclient:nonNamespaced
 
 // Blob is an API that describes the staged change of a resource
 // +k8s:deepcopy-gen=true
@@ -70,6 +71,9 @@ type BlobStatus struct {
 
 	// Retry is the number of times the blob has been retried.
 	Retry int64 `json:"retry,omitempty"`
+
+	// UploadIDs holds the list of upload IDs for multipart uploads
+	UploadIDs []string `json:"uploadIDs,omitempty"`
 
 	// Conditions holds conditions for the Blob.
 	// +patchMergeKey=type

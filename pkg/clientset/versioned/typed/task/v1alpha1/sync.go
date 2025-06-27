@@ -32,7 +32,7 @@ import (
 // SyncsGetter has a method to return a SyncInterface.
 // A group's client should implement this interface.
 type SyncsGetter interface {
-	Syncs(namespace string) SyncInterface
+	Syncs() SyncInterface
 }
 
 // SyncInterface has methods to work with Sync resources.
@@ -56,13 +56,13 @@ type syncs struct {
 }
 
 // newSyncs returns a Syncs
-func newSyncs(c *TaskV1alpha1Client, namespace string) *syncs {
+func newSyncs(c *TaskV1alpha1Client) *syncs {
 	return &syncs{
 		gentype.NewClientWithList[*taskv1alpha1.Sync, *taskv1alpha1.SyncList](
 			"syncs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			namespace,
+			"",
 			func() *taskv1alpha1.Sync { return &taskv1alpha1.Sync{} },
 			func() *taskv1alpha1.SyncList { return &taskv1alpha1.SyncList{} },
 		),

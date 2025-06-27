@@ -32,7 +32,7 @@ import (
 // BlobsGetter has a method to return a BlobInterface.
 // A group's client should implement this interface.
 type BlobsGetter interface {
-	Blobs(namespace string) BlobInterface
+	Blobs() BlobInterface
 }
 
 // BlobInterface has methods to work with Blob resources.
@@ -56,13 +56,13 @@ type blobs struct {
 }
 
 // newBlobs returns a Blobs
-func newBlobs(c *TaskV1alpha1Client, namespace string) *blobs {
+func newBlobs(c *TaskV1alpha1Client) *blobs {
 	return &blobs{
 		gentype.NewClientWithList[*taskv1alpha1.Blob, *taskv1alpha1.BlobList](
 			"blobs",
 			c.RESTClient(),
 			scheme.ParameterCodec,
-			namespace,
+			"",
 			func() *taskv1alpha1.Blob { return &taskv1alpha1.Blob{} },
 			func() *taskv1alpha1.BlobList { return &taskv1alpha1.BlobList{} },
 		),

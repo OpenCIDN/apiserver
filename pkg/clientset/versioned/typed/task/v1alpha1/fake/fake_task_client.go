@@ -28,12 +28,12 @@ type FakeTaskV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeTaskV1alpha1) Blobs(namespace string) v1alpha1.BlobInterface {
-	return newFakeBlobs(c, namespace)
+func (c *FakeTaskV1alpha1) Blobs() v1alpha1.BlobInterface {
+	return newFakeBlobs(c)
 }
 
-func (c *FakeTaskV1alpha1) Syncs(namespace string) v1alpha1.SyncInterface {
-	return newFakeSyncs(c, namespace)
+func (c *FakeTaskV1alpha1) Syncs() v1alpha1.SyncInterface {
+	return newFakeSyncs(c)
 }
 
 // RESTClient returns a RESTClient that is used to communicate
