@@ -26,8 +26,8 @@ import (
 )
 
 func main() {
-	stopCh := genericapiserver.SetupSignalHandler()
-	cmd := apiserver.NewServerCommand(stopCh)
+	ctx := genericapiserver.SetupSignalContext()
+	cmd := apiserver.NewServerCommand(ctx)
 	code := cli.Run(cmd)
 	os.Exit(code)
 }

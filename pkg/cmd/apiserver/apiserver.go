@@ -124,7 +124,7 @@ func (o Options) ApiserverConfig() (*genericapiserver.RecommendedConfig, error) 
 }
 
 // NewServerCommand provides a CLI handler for the metrics server entrypoint
-func NewServerCommand(stopCh <-chan struct{}) *cobra.Command {
+func NewServerCommand(ctx context.Context) *cobra.Command {
 	opts := &Options{
 		SecureServing: genericoptions.NewSecureServingOptions().WithLoopback(),
 		Etcd:          genericoptions.NewEtcdOptions(storagebackend.NewDefaultConfig(defaultEtcdPathPrefix, nil)),
