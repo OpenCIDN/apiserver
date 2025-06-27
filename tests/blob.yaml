@@ -1,0 +1,18 @@
+# apiVersion: task.opencidn.daocloud.io/v1alpha1
+# kind: Blob
+# metadata:
+#   name: blob
+# spec:
+#   source: http://nginx/LICENSE
+#   destination:
+#   - LICENSE-blob
+# ---
+apiVersion: task.opencidn.daocloud.io/v1alpha1
+kind: Blob
+metadata:
+  name: blob-parts
+spec:
+  chunkSize: 1024
+  source: http://nginx/LICENSE
+  destination:
+  - LICENSE-blob-parts

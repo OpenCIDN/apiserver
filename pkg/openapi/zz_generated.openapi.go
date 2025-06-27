@@ -251,6 +251,13 @@ func schema_pkg_apis_task_v1alpha1_BlobSpec(ref common.ReferenceCallback) common
 							Format:      "int64",
 						},
 					},
+					"chunkSize": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ChunkSize represents the size of each chunk when splitting the blob.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
 					"hash": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Hash is the hash of the blob content being verified.",

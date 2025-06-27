@@ -28,6 +28,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +genclient
 // +genclient:nonNamespaced
+// +genclient:noStatus
 
 // Blob is an API that describes the staged change of a resource
 // +k8s:deepcopy-gen=true
@@ -101,6 +102,9 @@ type BlobSpec struct {
 
 	// Total represents the total amount of work to be done for this blob.
 	Total int64 `json:"total"`
+
+	// ChunkSize represents the size of each chunk when splitting the blob.
+	ChunkSize int64 `json:"chunkSize,omitempty"`
 
 	// Hash is the hash of the blob content being verified.
 	Hash string `json:"hash"`

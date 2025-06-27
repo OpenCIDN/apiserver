@@ -19,7 +19,11 @@ package sync
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,8 +36,8 @@ import (
 )
 
 // NewStrategy creates and returns a syncStrategy instance
-func NewStrategy(typer runtime.ObjectTyper) syncStrategy {
-	return syncStrategy{typer, names.SimpleNameGenerator}
+func NewStrategy(typer runtime.ObjectTyper) *syncStrategy {
+	return &syncStrategy{typer, names.SimpleNameGenerator}
 }
 
 // GetAttrs returns labels.Set, fields.Set, and error in case the given runtime.Object is not a Sync
@@ -65,39 +69,128 @@ type syncStrategy struct {
 	names.NameGenerator
 }
 
-func (syncStrategy) NamespaceScoped() bool {
+func (*syncStrategy) NamespaceScoped() bool {
 	return false
 }
 
-func (syncStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
+func (*syncStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 }
 
-func (syncStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
+func (*syncStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
 }
 
-func (syncStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
-	return field.ErrorList{}
+func (*syncStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
+	sync := obj.(*v1alpha1.Sync)
+	var errList field.ErrorList
+
+	if sync.Spec.Total <= 0 {
+		errList = append(errList, field.Required(field.NewPath("spec", "total"), "total must be greater than 0"))
+	}
+
+	if len(sync.Spec.Source.Request.URL) == 0 {
+		errList = append(errList, field.Required(field.NewPath("spec", "source", "request", "url"), "source URL must be specified"))
+	}
+
+	if len(sync.Spec.Destination) == 0 {
+		errList = append(errList, field.Required(field.NewPath("spec", "destination"), "at least one destination must be specified"))
+	}
+
+	return errList
 }
 
 // WarningsOnCreate returns warnings for the creation of the given object.
-func (syncStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string { return nil }
+func (*syncStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string { return nil }
 
-func (syncStrategy) AllowCreateOnUpdate() bool {
+func (*syncStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (syncStrategy) AllowUnconditionalUpdate() bool {
+func (*syncStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (syncStrategy) Canonicalize(obj runtime.Object) {
+func (*syncStrategy) Canonicalize(obj runtime.Object) {
+	sync := obj.(*v1alpha1.Sync)
+
+	if sync.Status.Phase == "" {
+		sync.Status.Phase = v1alpha1.SyncPhasePending
+	}
 }
 
-func (syncStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
-	return field.ErrorList{}
+func (*syncStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
+	newSync := obj.(*v1alpha1.Sync)
+	oldSync := old.(*v1alpha1.Sync)
+	var errList field.ErrorList
+
+	if newSync.Spec.Total != oldSync.Spec.Total {
+		errList = append(errList, field.Forbidden(field.NewPath("spec", "total"), "total is immutable"))
+	}
+
+	if newSync.Spec.Source.Request.URL != oldSync.Spec.Source.Request.URL {
+		errList = append(errList, field.Forbidden(field.NewPath("spec", "source", "request", "url"), "source URL is immutable"))
+	}
+
+	if !reflect.DeepEqual(newSync.Spec.Destination, oldSync.Spec.Destination) {
+		errList = append(errList, field.Forbidden(field.NewPath("spec", "destination"), "destination is immutable"))
+	}
+
+	return errList
 }
 
 // WarningsOnUpdate returns warnings for the given update.
-func (syncStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+func (*syncStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
 	return nil
+}
+
+func (*syncStrategy) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+	table := &metav1.Table{}
+
+	if m, err := meta.ListAccessor(object); err == nil {
+		table.ResourceVersion = m.GetResourceVersion()
+		table.Continue = m.GetContinue()
+		table.RemainingItemCount = m.GetRemainingItemCount()
+	} else {
+		if m, err := meta.CommonAccessor(object); err == nil {
+			table.ResourceVersion = m.GetResourceVersion()
+		}
+	}
+	if opt, ok := tableOptions.(*metav1.TableOptions); !ok || !opt.NoHeaders {
+		table.ColumnDefinitions = []metav1.TableColumnDefinition{
+			{Name: "Name", Type: "string", Format: "name", Description: "Name of the sync"},
+			{Name: "Handler", Type: "string", Description: "Handler for the sync"},
+			{Name: "Phase", Type: "string", Description: "Current phase of the sync"},
+			{Name: "Progress", Type: "string", Description: "Progress of the sync"},
+			{Name: "Created At", Type: "date", Description: "Creation timestamp of the sync"},
+		}
+	}
+
+	fn := func(obj runtime.Object) error {
+		sync, ok := obj.(*v1alpha1.Sync)
+		if !ok {
+			return fmt.Errorf("expected *v1alpha1.Sync, got %T", obj)
+		}
+		table.Rows = append(table.Rows, metav1.TableRow{
+			Cells: []interface{}{
+				sync.Name,
+				sync.Spec.HandlerName,
+				sync.Status.Phase,
+				fmt.Sprintf("%d/%d", sync.Status.Progress, sync.Spec.Total),
+				sync.CreationTimestamp.Time.UTC().Format(time.RFC3339),
+			},
+			Object: runtime.RawExtension{Object: obj},
+		})
+		return nil
+	}
+	switch {
+	case meta.IsListType(object):
+		if err := meta.EachListItem(object, fn); err != nil {
+			return nil, err
+		}
+	default:
+		if err := fn(object); err != nil {
+			return nil, err
+		}
+	}
+
+	return table, nil
 }

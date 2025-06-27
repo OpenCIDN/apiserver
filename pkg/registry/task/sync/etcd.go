@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
-	"k8s.io/apiserver/pkg/registry/rest"
 
 	"github.com/OpenCIDN/apiserver/pkg/apis/task/v1alpha1"
 )
@@ -40,7 +39,7 @@ func NewREST(scheme *runtime.Scheme, optsGetter generic.RESTOptionsGetter) (*gen
 		UpdateStrategy: strategy,
 		DeleteStrategy: strategy,
 
-		TableConvertor: rest.NewDefaultTableConvertor(v1alpha1.Resource("syncs")),
+		TableConvertor: strategy,
 	}
 	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
 	if err := store.CompleteWithOptions(options); err != nil {

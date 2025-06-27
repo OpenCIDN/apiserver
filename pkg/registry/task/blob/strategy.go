@@ -19,7 +19,11 @@ package blob
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,8 +36,8 @@ import (
 )
 
 // NewStrategy creates and returns a blobStrategy instance
-func NewStrategy(typer runtime.ObjectTyper) blobStrategy {
-	return blobStrategy{typer, names.SimpleNameGenerator}
+func NewStrategy(typer runtime.ObjectTyper) *blobStrategy {
+	return &blobStrategy{typer, names.SimpleNameGenerator}
 }
 
 // GetAttrs returns labels.Set, fields.Set, and error in case the given runtime.Object is not a Blob
@@ -65,39 +69,124 @@ type blobStrategy struct {
 	names.NameGenerator
 }
 
-func (blobStrategy) NamespaceScoped() bool {
+func (*blobStrategy) NamespaceScoped() bool {
 	return false
 }
 
-func (blobStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
+func (*blobStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 }
 
-func (blobStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
+func (*blobStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
 }
 
-func (blobStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
-	return field.ErrorList{}
+func (*blobStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
+	blob := obj.(*v1alpha1.Blob)
+
+	var errList field.ErrorList
+
+	if blob.Spec.Source == "" {
+		errList = append(errList, field.Required(field.NewPath("spec", "source"), "source must be specified"))
+	}
+
+	if len(blob.Spec.Destination) == 0 {
+		errList = append(errList, field.Required(field.NewPath("spec", "destination"), "at least one destination must be specified"))
+	}
+
+	return errList
 }
 
 // WarningsOnCreate returns warnings for the creation of the given object.
-func (blobStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string { return nil }
+func (*blobStrategy) WarningsOnCreate(ctx context.Context, obj runtime.Object) []string { return nil }
 
-func (blobStrategy) AllowCreateOnUpdate() bool {
+func (*blobStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (blobStrategy) AllowUnconditionalUpdate() bool {
+func (*blobStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (blobStrategy) Canonicalize(obj runtime.Object) {
+func (*blobStrategy) Canonicalize(obj runtime.Object) {
+	blob := obj.(*v1alpha1.Blob)
+
+	if blob.Status.Phase == "" {
+		blob.Status.Phase = v1alpha1.BlobPhasePending
+	}
 }
 
-func (blobStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
-	return field.ErrorList{}
+func (*blobStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object) field.ErrorList {
+	newBlob := obj.(*v1alpha1.Blob)
+	oldBlob := old.(*v1alpha1.Blob)
+	var errList field.ErrorList
+
+	if newBlob.Spec.Source != oldBlob.Spec.Source {
+		errList = append(errList, field.Forbidden(field.NewPath("spec", "source"), "source is immutable"))
+	}
+
+	if !reflect.DeepEqual(newBlob.Spec.Destination, oldBlob.Spec.Destination) {
+		errList = append(errList, field.Forbidden(field.NewPath("spec", "destination"), "destination is immutable"))
+	}
+
+	return errList
 }
 
 // WarningsOnUpdate returns warnings for the given update.
-func (blobStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
+func (*blobStrategy) WarningsOnUpdate(ctx context.Context, obj, old runtime.Object) []string {
 	return nil
+}
+
+func (*blobStrategy) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+	table := &metav1.Table{}
+
+	if m, err := meta.ListAccessor(object); err == nil {
+		table.ResourceVersion = m.GetResourceVersion()
+		table.Continue = m.GetContinue()
+		table.RemainingItemCount = m.GetRemainingItemCount()
+	} else {
+		if m, err := meta.CommonAccessor(object); err == nil {
+			table.ResourceVersion = m.GetResourceVersion()
+		}
+	}
+	if opt, ok := tableOptions.(*metav1.TableOptions); !ok || !opt.NoHeaders {
+		table.ColumnDefinitions = []metav1.TableColumnDefinition{
+			{Name: "Name", Type: "string", Format: "name", Description: "Name of the blob"},
+			{Name: "Handler", Type: "string", Description: "Handler for the blob"},
+			{Name: "Source", Type: "string", Description: "Source of the blob"},
+			{Name: "Phase", Type: "string", Description: "Current phase of the blob"},
+			{Name: "Progress", Type: "string", Description: "Progress of the blob"},
+			{Name: "Created At", Type: "date", Description: "Creation timestamp of the blob"},
+		}
+	}
+
+	fn := func(obj runtime.Object) error {
+		blob, ok := obj.(*v1alpha1.Blob)
+		if !ok {
+			return fmt.Errorf("expected *v1alpha1.Blob, got %T", obj)
+		}
+		table.Rows = append(table.Rows, metav1.TableRow{
+			Cells: []interface{}{
+				blob.Name,
+				blob.Spec.HandlerName,
+				blob.Spec.Source,
+				blob.Status.Phase,
+				fmt.Sprintf("%d/%d", blob.Status.Progress, blob.Spec.Total),
+				blob.CreationTimestamp.Time.UTC().Format(time.RFC3339),
+			},
+			Object: runtime.RawExtension{Object: blob},
+		})
+		return nil
+	}
+
+	switch {
+	case meta.IsListType(object):
+		if err := meta.EachListItem(object, fn); err != nil {
+			return nil, err
+		}
+	default:
+		if err := fn(object); err != nil {
+			return nil, err
+		}
+	}
+
+	return table, nil
 }
