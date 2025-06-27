@@ -24,7 +24,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 
-	"github.com/OpenCIDN/apis/pkg/apis/task/v1alpha1"
+	"github.com/OpenCIDN/apiserver/pkg/apis/task/v1alpha1"
 	"github.com/OpenCIDN/apiserver/pkg/registry/task/blob"
 	"github.com/OpenCIDN/apiserver/pkg/registry/task/sync"
 )

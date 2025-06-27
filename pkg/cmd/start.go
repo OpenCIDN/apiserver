@@ -23,8 +23,8 @@ import (
 	"net"
 	"os"
 
-	generatedopenapi "github.com/OpenCIDN/apis/pkg/openapi"
 	myapiserver "github.com/OpenCIDN/apiserver/pkg/apiserver"
+	generatedopenapi "github.com/OpenCIDN/apiserver/pkg/openapi"
 	"github.com/spf13/cobra"
 	"k8s.io/api/node/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"

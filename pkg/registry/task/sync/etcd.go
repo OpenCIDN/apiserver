@@ -22,7 +22,7 @@ import (
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 
-	"github.com/OpenCIDN/apis/pkg/apis/task/v1alpha1"
+	"github.com/OpenCIDN/apiserver/pkg/apis/task/v1alpha1"
 )
 
 // NewREST returns a RESTStorage object that will work against API services.

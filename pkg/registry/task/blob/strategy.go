@@ -28,7 +28,7 @@ import (
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	"github.com/OpenCIDN/apis/pkg/apis/task/v1alpha1"
+	"github.com/OpenCIDN/apiserver/pkg/apis/task/v1alpha1"
 )
 
 // NewStrategy creates and returns a blobStrategy instance
