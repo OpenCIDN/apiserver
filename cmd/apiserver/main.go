@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubernetes Authors.
+Copyright 2025 The OpenCIDN Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 
 func main() {
 	stopCh := genericapiserver.SetupSignalHandler()
-	cmd := cmd.NewHelloServerCommand(stopCh)
+	cmd := cmd.NewServerCommand(stopCh)
 	code := cli.Run(cmd)
 	os.Exit(code)
 }
