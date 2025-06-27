@@ -22,12 +22,12 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/component-base/cli"
 
-	"github.com/OpenCIDN/apiserver/pkg/cmd"
+	"github.com/OpenCIDN/apiserver/pkg/cmd/apiserver"
 )
 
 func main() {
 	stopCh := genericapiserver.SetupSignalHandler()
-	cmd := cmd.NewServerCommand(stopCh)
+	cmd := apiserver.NewServerCommand(stopCh)
 	code := cli.Run(cmd)
 	os.Exit(code)
 }
